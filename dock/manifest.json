@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "dev.momoi-labs.aresta.dock",
+  "name": "Aresta Dock",
+  "version": "0.1.0",
+  "author": "Sebastian Webber",
+  "description": "A dock with pinned, recent and minimized items",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Dock.qml"
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.dock"
+  }
+}

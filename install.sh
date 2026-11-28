@@ -18,6 +18,9 @@ SWITCHER_ID="$(jq -r .id "$REPO/switcher/manifest.json")"
 SWITCHER_LINK="$HOME/.config/omarchy/plugins/$SWITCHER_ID"
 CONTROL_CENTER_ID="$(jq -r .id "$REPO/control-center/manifest.json")"
 CONTROL_CENTER_LINK="$HOME/.config/omarchy/plugins/$CONTROL_CENTER_ID"
+DOCK_ID="$(jq -r .id "$REPO/dock/manifest.json")"
+DOCK_LINK="$HOME/.config/omarchy/plugins/$DOCK_ID"
+OLD_DOCK_ID="io.github.rafabertholdo.macos-dock"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/aresta-wallpaper"
@@ -117,6 +120,26 @@ fi
 if ! omarchy-plugin-list | grep -qE "^$CONTROL_CENTER_ID +enabled "; then
   say "Enabling the Control Center"
   omarchy-plugin-enable "$CONTROL_CENTER_ID" >/dev/null
+fi
+
+if [[ -L $DOCK_LINK && $(readlink -f "$DOCK_LINK") == "$REPO/dock" ]]; then
+  :
+elif [[ -e $DOCK_LINK || -L $DOCK_LINK ]]; then
+  fail "$DOCK_LINK already exists and is not a link to $REPO/dock"
+else
+  say "Linking $DOCK_LINK"
+  ln -s "$REPO/dock" "$DOCK_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if omarchy-plugin-list | grep -qE "^$OLD_DOCK_ID +enabled "; then
+  say "Disabling the macOS Dock plugin, which the Aresta Dock replaces"
+  omarchy-plugin-disable "$OLD_DOCK_ID" >/dev/null
+fi
+
+if ! omarchy-plugin-list | grep -qE "^$DOCK_ID +enabled "; then
+  say "Enabling the dock"
+  omarchy-plugin-enable "$DOCK_ID" >/dev/null
 fi
 
 if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; then

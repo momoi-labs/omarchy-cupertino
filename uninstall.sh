@@ -17,6 +17,8 @@ SWITCHER_ID="$(jq -r .id "$REPO/switcher/manifest.json")"
 SWITCHER_LINK="$HOME/.config/omarchy/plugins/$SWITCHER_ID"
 CONTROL_CENTER_ID="$(jq -r .id "$REPO/control-center/manifest.json")"
 CONTROL_CENTER_LINK="$HOME/.config/omarchy/plugins/$CONTROL_CENTER_ID"
+DOCK_ID="$(jq -r .id "$REPO/dock/manifest.json")"
+DOCK_LINK="$HOME/.config/omarchy/plugins/$DOCK_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
 THEMES_DIR="$HOME/.config/omarchy/themes"
@@ -61,6 +63,17 @@ fi
 if [[ -L $CONTROL_CENTER_LINK && $(readlink -f "$CONTROL_CENTER_LINK") == "$REPO/control-center" ]]; then
   say "Removing $CONTROL_CENTER_LINK"
   rm "$CONTROL_CENTER_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if omarchy-plugin-list | grep -qE "^$DOCK_ID +enabled "; then
+  say "Disabling the dock"
+  omarchy-plugin-disable "$DOCK_ID" >/dev/null
+fi
+
+if [[ -L $DOCK_LINK && $(readlink -f "$DOCK_LINK") == "$REPO/dock" ]]; then
+  say "Removing $DOCK_LINK"
+  rm "$DOCK_LINK"
   omarchy-shell shell rescanPlugins >/dev/null
 fi
 

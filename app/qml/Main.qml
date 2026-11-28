@@ -60,6 +60,7 @@ Window {
   }
 
   readonly property string searchPlugin: "dev.momoi-labs.aresta.menu"
+  readonly property string dockPlugin: "dev.momoi-labs.aresta.dock"
 
   readonly property var previewMenu: [
     { icon: "\u{f003b}", label: qsTr("Apps"), menu: false, provider: true },
@@ -201,6 +202,17 @@ Window {
       { title: qsTr("Clock"), rows: [
         { type: "text", key: "clock_format", label: qsTr("Clock format"), hint: qsTr("Qt date format, like ddd d MMM  HH:mm") }
       ] }
+    ] },
+    { id: "dock", name: qsTr("Dock"), block: 1, groups: [
+      { rows: [
+        { type: "plugin", plugin: dockPlugin, label: qsTr("Use the Aresta Dock"), hint: qsTr("Off brings back the Omarchy dock") },
+        { type: "dock", label: qsTr("Dock preview") },
+        { type: "slider", requires: { plugin: dockPlugin }, key: "dock_size", label: qsTr("Size"), min: 32, max: 80, step: 2, unit: "px" },
+        { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_magnification", label: qsTr("Magnification"), hint: qsTr("Icons grow under the pointer") },
+        { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_autohide", label: qsTr("Automatically hide and show the Dock"), hint: qsTr("Move the pointer to the bottom edge to show it") },
+        { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_indicators", label: qsTr("Show indicators for open applications") },
+        { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_recents", label: qsTr("Show recent apps in Dock"), hint: qsTr("The last 3 apps that are not pinned") }
+      ], note: qsTr("Drag a pinned app to reorder it. Right-click an app to keep it in the Dock or remove it. Minimized windows show next to the Trash.") }
     ] },
     { id: "search", name: qsTr("Search"), block: 1, groups: [
       { rows: [
@@ -729,6 +741,7 @@ Window {
                       : modelData.type === "appearance_preview" ? appearancePreviewRow
                       : modelData.type === "wallpaper" ? wallpaperRow
                       : modelData.type === "bar" ? barRow
+                      : modelData.type === "dock" ? dockRow
                       : modelData.type === "titlebars" ? titleBarsRow
                       : modelData.type === "search" ? searchRow
                       : modelData.type === "switcher" ? switcherRow
@@ -1198,6 +1211,97 @@ Window {
               color: preview.ink
               font.family: look.fontFamily
               font.pixelSize: 12
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: dockRow
+
+    Item {
+      id: dockPreview
+      readonly property bool on: store.revision >= 0 && store.pluginEnabled(window.dockPlugin)
+      readonly property bool autohide: store.revision >= 0 && store.flag("dock_autohide")
+      readonly property bool indicators: store.revision >= 0 && store.flag("dock_indicators")
+      readonly property bool recents: store.revision >= 0 && store.flag("dock_recents")
+      readonly property bool magnify: store.revision >= 0 && store.flag("dock_magnification")
+      readonly property real tile: (store.revision >= 0 ? store.number("dock_size") : 58) * 0.5
+      readonly property bool darkBg: look.background.hslLightness < 0.5
+      readonly property var tiles: ["#8e8e93", "#0a7aff", "#30a8c8", "#34c759", "#ff9f0a"].concat(recents ? ["", "#af52de", "#ff375f"] : []).concat(["", "#d1d1d6", "#aeaeb2"])
+      implicitHeight: 174
+
+      Rectangle {
+        x: 12
+        y: 12
+        width: parent.width - 24
+        height: 150
+        radius: 10
+        color: look.controlSoft
+        border.width: 1
+        border.color: look.separator
+        clip: true
+
+        RoundedImage {
+          radius: 9
+          anchors.fill: parent
+          anchors.margins: 1
+          source: store.thumbnails >= 0 ? store.thumbnail(store.currentWallpaper, 512) : ""
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+
+        Rectangle {
+          id: dockPanel
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: parent.height - height - 4 + (dockPreview.autohide ? height - 5 : 0)
+          width: dockTiles.width + 10
+          height: dockPreview.tile + 12
+          radius: Math.min(13, Math.round(height * 0.32))
+          color: dockPreview.darkBg ? Qt.rgba(52 / 255, 52 / 255, 56 / 255, 0.5) : Qt.rgba(246 / 255, 246 / 255, 246 / 255, 0.5)
+          border.width: 1
+          border.color: dockPreview.darkBg ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.6)
+          opacity: dockPreview.on ? 1 : 0.35
+
+          Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+
+          Row {
+            id: dockTiles
+            x: 5
+            y: 3
+            spacing: Math.round(dockPreview.tile * 0.14)
+
+            Repeater {
+              model: dockPreview.tiles
+
+              Item {
+                id: dockTile
+                required property string modelData
+                required property int index
+                readonly property real grow: dockPreview.magnify ? ([1, 1.15, 1.4, 1.15][index] || 1) : 1
+                width: modelData === "" ? 1 : dockPreview.tile * grow
+                height: dockPreview.tile + 7
+
+                Rectangle {
+                  width: parent.width
+                  height: dockTile.modelData === "" ? dockPreview.tile * 0.84 : parent.width
+                  y: dockTile.modelData === "" ? dockPreview.tile * 0.08 : dockPreview.tile - height
+                  radius: dockTile.modelData === "" ? 0 : width * 0.22
+                  color: dockTile.modelData === "" ? (dockPreview.darkBg ? Qt.rgba(1, 1, 1, 0.24) : Qt.rgba(0, 0, 0, 0.2)) : dockTile.modelData
+                }
+
+                Rectangle {
+                  visible: dockPreview.indicators && (dockTile.index === 1 || dockTile.index === 3)
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  y: dockPreview.tile + 2
+                  width: 3
+                  height: 3
+                  radius: 1.5
+                  color: dockPreview.darkBg ? Qt.rgba(1, 1, 1, 0.85) : Qt.rgba(0, 0, 0, 0.74)
+                }
+              }
             }
           }
         }

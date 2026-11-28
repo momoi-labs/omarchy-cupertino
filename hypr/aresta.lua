@@ -280,6 +280,7 @@ if settings.quake_enabled then
 end
 
 hl.layer_rule({ match = { namespace = "^aresta-bar$" }, no_anim = true, animation = "none" })
+hl.layer_rule({ match = { namespace = "^(aresta-dock|aresta-dock-apps)$" }, no_anim = true, animation = "none" })
 
 if not settings.traffic_lights_enabled or package.loaded["hypr.titlebars"] then
   return
