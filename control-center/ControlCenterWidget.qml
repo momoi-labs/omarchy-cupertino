@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import qs.Commons as Commons
 import qs.Ui
+import "PanelSettings.js" as PanelSettings
 
 BarWidget {
   id: root
@@ -19,23 +20,11 @@ BarWidget {
   property bool stale: false
 
   readonly property var options: settings || ({})
-  readonly property var panelSettings: {
-    var values = { panels_translucent: true, panels_opacity: 70, panels_align_right: true, control_center_halo: false }
-    var lines = settingsFile.text().split("\n")
-    for (var i = 0; i < lines.length; i++) {
-      var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
-      if (!match || !(match[1] in values)) continue
-      if (typeof values[match[1]] === "boolean") {
-        if (match[2] === "true" || match[2] === "false") values[match[1]] = match[2] === "true"
-      } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
-        values[match[1]] = Number(match[2])
-      }
-    }
-    return values
-  }
+  readonly property var panelSettings: PanelSettings.read(settingsFile.text())
   readonly property bool panelsTranslucent: panelSettings.panels_translucent
   readonly property real panelsAlpha: Math.max(0.3, Math.min(1, panelSettings.panels_opacity / 100))
   readonly property bool panelsAlignRight: panelSettings.panels_align_right
+  readonly property bool inUse: PanelSettings.inUse(panelSettings, options)
   readonly property bool controlCenterHalo: panelSettings.control_center_halo
   readonly property bool darkCard: (0.2126 * Commons.Color.popups.background.r + 0.7152 * Commons.Color.popups.background.g + 0.0722 * Commons.Color.popups.background.b) < 0.4
   readonly property FontMetrics fontProbe: FontMetrics {}
@@ -69,6 +58,7 @@ BarWidget {
     id: settingsFile
     path: Quickshell.env("HOME") + "/.config/aresta/settings.toml"
     watchChanges: true
+    blockLoading: true
     printErrors: false
     onFileChanged: reload()
     onLoadFailed: settingsRetry.restart()
@@ -82,7 +72,7 @@ BarWidget {
 
   function flag(name) { return options[name] === undefined ? true : options[name] === true }
   function close() { open = false; pinned = false }
-  function refresh() { if (!reader.running) reader.running = true }
+  function refresh() { if (inUse && !reader.running) reader.running = true }
 
   function act(command) {
     if (command[0] === "picker") close()
@@ -113,8 +103,15 @@ BarWidget {
     info = copy
   }
 
+  visible: inUse
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
+
+  Component.onCompleted: refresh()
+  onInUseChanged: {
+    if (inUse) refresh()
+    else close()
+  }
 
   onOpenChanged: {
     if (open) refresh()
@@ -134,7 +131,6 @@ BarWidget {
   Process {
     id: reader
     command: ["bash", Qt.resolvedUrl("data.sh").toString().replace("file://", "")]
-    running: true
     stdout: StdioCollector {
       onStreamFinished: {
         if (runner.running || root.queue.length > 0) return
@@ -167,9 +163,9 @@ BarWidget {
 
   IpcHandler {
     target: "aresta-control-center"
-    function reveal(): void { root.pinned = true; root.open = true }
+    function reveal(): void { if (root.inUse) { root.pinned = true; root.open = true } }
     function dismiss(): void { root.close() }
-    function toggle(): void { root.pinned = false; root.open = !root.open }
+    function toggle(): void { if (root.inUse) { root.pinned = false; root.open = !root.open } }
   }
 
   PopupWindow {
