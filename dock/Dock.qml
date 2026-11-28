@@ -408,7 +408,7 @@ Item {
   function clearOpened(address) {
     if (!docks.instances.some(function(dock) { return dock.exclusiveZone > 0 })) return
     root.opened = root.opened.concat([address])
-    clearSettle.restart()
+    clearSettle.start()
   }
 
   function moveClear(text) {
