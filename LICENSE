@@ -13,6 +13,12 @@ plugin for Omarchy:
 
 Copyright (c) 2026 Renan Tonheiro
 
+The dock (dock/*.qml and dock/DockModel.js) is derived from Rafael Bertholdo's
+macOS Dock plugin for Omarchy, which is derived from Omarchy's dock plugin:
+
+Copyright (c) 2026 Rafael Bertholdo
+Copyright (c) David Heinemeier Hansson
+
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
 "Software"), to deal in the Software without restriction, including

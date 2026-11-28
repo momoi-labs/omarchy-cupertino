@@ -6,7 +6,7 @@ MEDIA="$REPO/docs/media"
 OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
 PLUGIN=dev.momoi-labs.aresta
 GIFS=(menu-bar control-center search title-bars)
-PNGS=(themes switcher settings)
+PNGS=(themes switcher settings dock)
 WIDTH=1280
 HEIGHT=720
 SCALE=1.25
@@ -60,10 +60,10 @@ keys() {
 }
 
 write_home() {
-  local mode=$1 cursor=$2 bar=$3
+  local mode=$1 cursor=$2 bar=$3 dock=$4
   local home="$WORK/home" repo="$WORK/repo"
   local plugins="$home/.config/omarchy/plugins" state="$home/.local/state/omarchy"
-  local next next_dark=false invisible=true app
+  local next next_dark=false invisible=true app dock_plugin=""
 
   mkdir -p "$WORK"/{runtime,apps,repo} "$plugins" "$home/.config/aresta" "$home/.config/hypr" \
     "$state/current" "$state/toggles/hypr" "$state/workspace-layouts" "$home/.local/state/aresta" \
@@ -73,6 +73,7 @@ write_home() {
   ln -s "$repo" "$plugins/$PLUGIN"
   ln -s "$repo/menu" "$plugins/$PLUGIN.menu"
   ln -s "$repo/switcher" "$plugins/$PLUGIN.switcher"
+  ln -s "$repo/dock" "$plugins/$PLUGIN.dock"
   ln -s "$repo/hypr/aresta.lua" "$home/.config/hypr/aresta.lua"
   cp -r "$REPO/control-center" "$plugins/$PLUGIN.control-center"
   cat >"$plugins/$PLUGIN.control-center/data.sh" <<'EOF'
@@ -106,6 +107,7 @@ Categories=Settings;
 StartupWMClass=$SETTINGS
 EOF
 
+  [[ $dock == on ]] && dock_plugin=", { \"id\": \"$PLUGIN.dock\" }"
   cat >"$home/.config/omarchy/shell.json" <<EOF
 {
   "version": 1,
@@ -123,7 +125,8 @@ EOF
     }
   },
   "disabledPlugins": ["omarchy.dock", "omarchy.polkit", "omarchy.menu"],
-  "plugins": [{ "id": "$PLUGIN.switcher" }]
+  "dock": { "pinned": ["$FILES", "$CALCULATOR", "omawrite", "$SETTINGS", "mpv"] },
+  "plugins": [{ "id": "$PLUGIN.switcher" }$dock_plugin]
 }
 EOF
 
@@ -308,7 +311,7 @@ wait_for_session() {
     fail "the nested session did not start"
   fi
 
-  in_session hyprctl eval 'hl.exec_cmd("quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")' >/dev/null
+  in_session hyprctl eval 'hl.exec_cmd("env QT_QPA_PLATFORMTHEME=gtk3 quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")' >/dev/null
   for _ in $(seq 1 80); do
     if [[ $(in_session omarchy-shell shell ping 2>/dev/null) == ok ]]; then
       sleep 2
@@ -321,10 +324,10 @@ wait_for_session() {
 }
 
 start_session() {
-  local mode=${1:-tiled} cursor=${2:-hidden} bar=${3:-$PLUGIN}
+  local mode=${1:-tiled} cursor=${2:-hidden} bar=${3:-$PLUGIN} dock=${4:-off}
 
   WORK="$(mktemp -d /tmp/aresta-media.XXXXXX)"
-  write_home "$mode" "$cursor" "$bar"
+  write_home "$mode" "$cursor" "$bar" "$dock"
   write_sandbox
   launch
   wait_for_session
@@ -346,7 +349,7 @@ restart_shell() {
     [[ $(in_session omarchy-shell shell ping 2>/dev/null) != ok ]] && break
     sleep 0.1
   done
-  in_session hyprctl eval 'hl.exec_cmd("quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")' >/dev/null
+  in_session hyprctl eval 'hl.exec_cmd("env QT_QPA_PLATFORMTHEME=gtk3 quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")' >/dev/null
   for _ in $(seq 1 80); do
     if [[ $(in_session omarchy-shell shell ping 2>/dev/null) == ok ]]; then
       sleep 0.6
@@ -671,6 +674,25 @@ target_settings() {
   write_png "$WORK/settings.ppm" settings
 }
 
+target_dock() {
+  local reader=org.gnome.Evince address
+
+  start_session floating hidden "$PLUGIN" on
+  restart_shell
+  sleep 2
+  open_files
+  open_calculator
+  open_app "$reader" evince
+  place "$FILES" 60 50 600 400
+  place "$CALCULATOR" 690 50 300 400
+  address="$(in_session hyprctl clients -j | jq -r --arg class "$reader" '.[] | select(.class == $class) | .address')"
+  in_session omarchy-hyprland-window-minimize "$address"
+  focus "$FILES"
+  sleep 2
+  shot "$WORK/dock.ppm"
+  write_png "$WORK/dock.ppm" dock
+}
+
 main() {
   local targets=() argument target
 
@@ -686,7 +708,7 @@ main() {
         usage
         exit 0
         ;;
-      menu-bar | control-center | search | title-bars | themes | switcher | settings)
+      menu-bar | control-center | search | title-bars | themes | switcher | settings | dock)
         targets+=("$argument")
         ;;
       *)

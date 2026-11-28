@@ -14,6 +14,7 @@ inspired by macOS.
 | Part | What you get |
 | --- | --- |
 | [Menu bar](#menu-bar) | A slim top bar in place of the Omarchy bar |
+| [Dock](#dock) | A dock with pinned apps, recent apps and minimized windows |
 | [Control Center](#control-center) | Floating controls for Wi-Fi, Bluetooth, Focus, theme, Night Light, display, sound and media |
 | [Search](#search) | The Omarchy menu as one search field |
 | [Title bars](#title-bars-and-windows) | Traffic lights on floating workspaces, rounded corners everywhere |
@@ -35,6 +36,29 @@ The menu bar replaces the Omarchy bar.
 - **Look:** text and icons in your theme's bar text color, dark on light themes
   and light on dark themes, on a translucent, unblurred background. It uses SF
   Pro when it is installed, else Inter or Noto Sans.
+
+## Dock
+
+![The dock at the bottom of the screen, with pinned apps, a recent app, a minimized window, Downloads and Trash](docs/media/dock.png)
+
+The dock replaces the Omarchy dock at the bottom of the screen. It is a
+frosted glass panel, light or dark with your theme.
+
+- **Pinned apps** come first, in the order you set. Drag an icon to move it.
+  Right-click an app to keep it in the dock or to remove it. A click starts
+  the app or focuses its window, and a dot shows under an app that is open.
+- **Recent apps** come next: open apps that are not pinned, then the last 3
+  apps that are not pinned. The dock remembers them when the shell restarts.
+- **Minimized windows** each get their own item, with a picture of the window
+  and its app icon. A click puts that window back on the workspace it came
+  from.
+- **Downloads and Trash** stay at the right end. The first icon opens a grid
+  of every app, which `omarchy-shell omarchy.dock apps` opens too.
+- **Autohide** tucks the dock under the screen edge and frees its space. Move
+  the pointer to the bottom edge to show it.
+
+The dock uses the pins of the Omarchy dock, so your pins stay when you switch
+between the two.
 
 ## Control Center
 
@@ -99,7 +123,8 @@ title bars.
 
 Every installed Omarchy theme is supported. The menu bar, Control Center,
 Aresta Search, title bars, app switcher and Aresta Settings follow your active
-theme's colors. In Aresta Settings under Appearance, pick any installed
+theme's colors. The dock is light or dark with the theme. In Aresta Settings
+under Appearance, pick any installed
 Omarchy theme as your light theme or dark theme, and switch manually or on Auto
 (sunrise/sunset or a custom schedule).
 
@@ -146,6 +171,7 @@ the app launcher.
 | Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Aresta Search and the app switcher; the Control Center and the status panels in the top-right corner. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
 | Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
 | Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
+| Dock | The dock itself, with a preview (off gives back the Omarchy dock); icon size; magnification under the pointer; autohide; the dots under open apps; recent apps. |
 | Search | Aresta Search itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
 | Title Bars | The title bars themselves, with a preview of two windows on your wallpaper; title bars on tiled windows too; button position (left or right); grey traffic lights on unfocused windows; icons in the traffic lights on hover; title alignment; traffic light size. Off gives back Omarchy's own title bars. |
 | Control Center | The Control Center itself (off gives back Omarchy's bar icons); the controls the panel shows; the Omarchy icons that also stay in the menu bar. |
@@ -154,12 +180,13 @@ the app launcher.
 | Aresta | Rounded corners and their radius and shape, the thin border, the shadow and the bar size. |
 
 Turning a part off gives back Omarchy's own behavior: the Omarchy bar, its
-status icons, title bars, square corners, colored border, menu, or its
+dock, status icons, title bars, square corners, colored border, menu, or its
 Super+Q, `` Super+` ``, `` Super+Shift+` ``, Super+Tab and Super+Shift+Tab
 bindings.
 
 Changes apply at once. The app saves them to
-`~/.config/aresta/settings.toml`, which the Hyprland config and the bar read. Without that file, every option keeps its default.
+`~/.config/aresta/settings.toml`, which the Hyprland config, the
+bar and the dock read. Without that file, every option keeps its default.
 
 The app is written in Rust with [cxx-qt](https://github.com/KDAB/cxx-qt) and
 QML. To build it by hand you need Rust (`cargo`) and Qt 6:
@@ -186,7 +213,10 @@ It links `hypr/aresta.lua` into `~/.config/hypr`, adds
 It links `switcher/` into `~/.config/omarchy/plugins` and enables it. It
 links `menu/` into `~/.config/omarchy/plugins` and enables it, which turns off
 the Omarchy menu. It links `control-center/` into
-`~/.config/omarchy/plugins` and enables it.
+`~/.config/omarchy/plugins` and enables it. It links `dock/` into
+`~/.config/omarchy/plugins` and enables it, which turns off the Omarchy dock.
+When Rafael Bertholdo's macOS Dock plugin is enabled, it disables that plugin,
+because the Aresta Dock replaces it.
 It links `themes/aresta-light` and `themes/aresta-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
@@ -209,16 +239,17 @@ Running the script again changes nothing.
 
 It restores `shell.json` from the backup (or selects the default bar when
 the file changed since), disables Aresta Search so the Omarchy menu
-comes back, disables the Control Center, removes the plugin links, the theme links, the hook
+comes back, disables the dock so the Omarchy dock comes back, disables the
+Control Center, removes the plugin links, the theme links, the hook
 link, the `require` line, the Hyprland link, the Aresta Settings binary,
 launcher entry and icon and the `aresta-auto` timer, then reloads Hyprland. It
 keeps your settings file.
 
 ## Credits
 
-The title bar code is based on the
+The title bar code and the dock are based on the
 [macOS Dock plugin](https://github.com/rafabertholdo/omarchy-macos) by Rafael Bertholdo
-(MIT). The app switcher is based on Renan Tonheiro's Switch Magic plugin
+(MIT), which builds on Omarchy's own dock. The app switcher is based on Renan Tonheiro's Switch Magic plugin
 (MIT). See `LICENSE`.
 
 The wordmark uses [Urbanist](https://fonts.google.com/specimen/Urbanist) (SIL
