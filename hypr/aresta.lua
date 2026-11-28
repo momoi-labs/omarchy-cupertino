@@ -112,6 +112,9 @@ if settings.shadow_enabled then
       },
     },
   })
+else
+  hl.config({ decoration = { shadow = { enabled = true } } })
+  hl.window_rule({ match = { class = ".*" }, no_shadow = true })
 end
 
 local MINIMIZED = "special:minimized"
