@@ -173,7 +173,6 @@ PanelWindow {
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
   exclusionMode: ExclusionMode.Normal
   exclusiveZone: window.shown && window.dock.configLoaded && !window.autohide ? window.panelHeight + window.edgeGap * 2 : 0
-  onExclusiveZoneChanged: window.dock.keepWindowsClear()
 
   anchors {
     bottom: true

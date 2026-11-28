@@ -80,7 +80,6 @@ fn defaults() -> Vec<Entry> {
         ("search_height", List(Vec::new())),
         ("dock_autohide", Flag(false)),
         ("dock_recents", Flag(true)),
-        ("dock_keep_clear", Flag(true)),
         ("dock_indicators", Flag(true)),
         ("dock_magnification", Flag(true)),
         ("dock_size", Number(58.0)),

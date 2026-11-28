@@ -71,19 +71,12 @@ Item {
   readonly property var settings: DockModel.parseSettings(settingsText, {
     dock_autohide: false,
     dock_recents: true,
-    dock_keep_clear: true,
     dock_indicators: true,
     dock_magnification: true,
     dock_size: 58
   })
   readonly property bool autohide: settings.dock_autohide
   readonly property bool showRecents: settings.dock_recents
-  readonly property bool keepClear: settings.dock_keep_clear
-  onKeepClearChanged: root.keepWindowsClear()
-  property bool leftHeld: false
-  property bool rightHeld: false
-  readonly property bool buttonHeld: leftHeld || rightHeld
-  onButtonHeldChanged: if (buttonHeld) clearSettle.stop()
   readonly property bool showIndicators: settings.dock_indicators
   readonly property bool magnify: settings.dock_magnification
   readonly property int preferredSize: Math.max(32, Math.min(80, Math.round(settings.dock_size)))
@@ -409,13 +402,16 @@ Item {
     }
   }
 
-  function keepWindowsClear() {
-    var reserves = docks.instances.some(function(dock) { return dock.exclusiveZone > 0 })
-    if (root.keepClear && reserves && !root.buttonHeld) clearSettle.restart()
+  property var opened: []
+  property var scanned: []
+
+  function clearOpened(address) {
+    if (!docks.instances.some(function(dock) { return dock.exclusiveZone > 0 })) return
+    root.opened = root.opened.concat([address])
+    clearSettle.restart()
   }
 
   function moveClear(text) {
-    if (!root.keepClear || root.buttonHeld) return
     var parts = text.split("\n---\n")
     var clients, monitors, gaps
     try {
@@ -429,6 +425,7 @@ Item {
     docks.instances.forEach(function(dock) { zones[dock.screen.name] = dock.exclusiveZone })
     var steps = []
     clients.forEach(function(client) {
+      if (root.scanned.indexOf(client.address) < 0) return
       var spot = DockModel.clearOfDock(client, monitors, zones, gaps)
       if (!spot) return
       var target = "relative = false, window = \"address:" + client.address + "\" })"
@@ -442,8 +439,13 @@ Item {
     id: clearSettle
     interval: 150
     onTriggered: {
-      if (clearScan.running) restart()
-      else clearScan.running = true
+      if (clearScan.running) {
+        restart()
+        return
+      }
+      root.scanned = root.opened
+      root.opened = []
+      clearScan.running = true
     }
   }
 
@@ -455,9 +457,6 @@ Item {
     }
   }
 
-  GlobalShortcut { appid: "aresta"; name: "dock-mouse-272"; description: "Dock: left mouse button"; onPressed: root.leftHeld = true; onReleased: { root.leftHeld = false; root.keepWindowsClear() } }
-  GlobalShortcut { appid: "aresta"; name: "dock-mouse-273"; description: "Dock: right mouse button"; onPressed: root.rightHeld = true; onReleased: { root.rightHeld = false; root.keepWindowsClear() } }
-
   Connections {
     target: Hyprland
     function onRawEvent(event) {
@@ -466,7 +465,7 @@ Item {
         Hyprland.refreshWorkspaces()
         Hyprland.refreshToplevels()
       }
-      if (name === "openwindow" || name === "changefloatingmode") root.keepWindowsClear()
+      if (name === "openwindow") root.clearOpened("0x" + String(event.data).split(",")[0])
     }
   }
 
