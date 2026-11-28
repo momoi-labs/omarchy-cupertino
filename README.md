@@ -56,6 +56,12 @@ frosted glass panel, light or dark with your theme.
   of every app, which `omarchy-shell omarchy.dock apps` opens too.
 - **Autohide** tucks the dock under the screen edge and frees its space. Move
   the pointer to the bottom edge to show it.
+- **Windows stay clear of the dock.** Hyprland keeps only tiled
+  windows out of the dock's space, so the dock moves a floating window up when
+  it opens, or when you end a move or a resize, over the dock. A window taller
+  than the free space shrinks to fit. Fullscreen windows, the Quake console
+  and minimized windows stay as they are. This does nothing while the dock
+  hides. Turn it off in Aresta Settings under Dock.
 
 The dock uses the pins of the Omarchy dock, so your pins stay when you switch
 between the two.
@@ -171,7 +177,7 @@ the app launcher.
 | Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Aresta Search and the app switcher; the Control Center and the status panels in the top-right corner. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
 | Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
 | Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
-| Dock | The dock itself, with a preview (off gives back the Omarchy dock); icon size; magnification under the pointer; autohide; the dots under open apps; recent apps. |
+| Dock | The dock itself, with a preview (off gives back the Omarchy dock); icon size; magnification under the pointer; autohide; keeping floating windows clear of the dock; the dots under open apps; recent apps. |
 | Search | Aresta Search itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
 | Title Bars | The title bars themselves, with a preview of two windows on your wallpaper; title bars on tiled windows too; button position (left or right); grey traffic lights on unfocused windows; icons in the traffic lights on hover; title alignment; traffic light size. Off gives back Omarchy's own title bars. |
 | Control Center | The Control Center itself (off gives back Omarchy's bar icons); the controls the panel shows; the Omarchy icons that also stay in the menu bar. |

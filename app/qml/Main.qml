@@ -210,6 +210,7 @@ Window {
         { type: "slider", requires: { plugin: dockPlugin }, key: "dock_size", label: qsTr("Size"), min: 32, max: 80, step: 2, unit: "px" },
         { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_magnification", label: qsTr("Magnification"), hint: qsTr("Icons grow under the pointer") },
         { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_autohide", label: qsTr("Automatically hide and show the Dock"), hint: qsTr("Move the pointer to the bottom edge to show it") },
+        { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_keep_clear", label: qsTr("Keep windows clear of the Dock"), hint: qsTr("Floating windows move up when they cover the Dock. Not used while the Dock hides.") },
         { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_indicators", label: qsTr("Show indicators for open applications") },
         { type: "toggle", requires: { plugin: dockPlugin }, key: "dock_recents", label: qsTr("Show recent apps in Dock"), hint: qsTr("The last 3 apps that are not pinned") }
       ], note: qsTr("Drag a pinned app to reorder it. Right-click an app to keep it in the Dock or remove it. Minimized windows show next to the Trash.") }

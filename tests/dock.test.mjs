@@ -105,6 +105,57 @@ test("settings read from the file and fall back to the defaults", () => {
   assert.deepEqual(plain(model.parseSettings("dock_size = big\n", defaults)), defaults)
 })
 
+const screens = [
+  { id: 0, name: "DP-1", x: 0, y: 0, width: 1920, height: 1080, scale: 1, transform: 0, reserved: [0, 29, 0, 94] },
+  { id: 1, name: "DP-2", x: 1920, y: 0, width: 3456, height: 2160, scale: 1.6, transform: 0, reserved: [0, 29, 0, 94] }
+]
+const floating = (at, size, extra = {}) => ({ address: "0xa", at, size, floating: true, fullscreen: 0, mapped: true, hidden: false, monitor: 0, workspace: { id: 1, name: "1" }, ...extra })
+const clear = (client, zones = { "DP-1": 94, "DP-2": 94 }) => plain(model.clearOfDock(client, screens, zones, model.gapsOut("10 10 10 10")))
+
+test("a floating window that fits above the dock stays", () => {
+  assert.equal(clear(floating([100, 100], [800, 876])), null)
+  assert.equal(clear(floating([100, 39], [800, 937])), null)
+})
+
+test("a floating window over the dock moves up", () => {
+  assert.deepEqual(clear(floating([100, 400], [800, 600])), { x: 100, y: 376, width: 800, height: 600 })
+})
+
+test("a floating window taller than the free area shrinks", () => {
+  assert.deepEqual(clear(floating([100, 60], [800, 1000])), { x: 100, y: 39, width: 800, height: 937 })
+})
+
+test("a window is held to the dock of its own monitor", () => {
+  const client = floating([2000, 900], [800, 400], { monitor: 1 })
+  assert.deepEqual(clear(client), { x: 2000, y: 846, width: 800, height: 400 })
+  assert.equal(clear(client, { "DP-1": 94, "DP-2": 0 }), null)
+})
+
+test("another bottom panel on the monitor adds to the dock area", () => {
+  const stacked = [{ ...screens[0], reserved: [0, 29, 0, 134] }]
+  const spot = model.clearOfDock(floating([100, 400], [800, 600]), stacked, { "DP-1": 94 }, model.gapsOut("10 10 10 10"))
+  assert.deepEqual(plain(spot), { x: 100, y: 336, width: 800, height: 600 })
+})
+
+test("the free area uses the logical height of a scaled monitor", () => {
+  assert.equal(clear(floating([2000, 446], [800, 800], { monitor: 1 })), null)
+  assert.deepEqual(clear(floating([2000, 447], [800, 800], { monitor: 1 })), { x: 2000, y: 446, width: 800, height: 800 })
+  assert.deepEqual(clear(floating([2000, 100], [800, 1300], { monitor: 1 })), { x: 2000, y: 39, width: 800, height: 1207 })
+})
+
+test("tiled, fullscreen and special workspace windows stay", () => {
+  assert.equal(clear(floating([100, 400], [800, 600], { floating: false })), null)
+  assert.equal(clear(floating([0, 0], [1920, 1080], { fullscreen: 2 })), null)
+  assert.equal(clear(floating([100, 400], [800, 600], { workspace: { id: -98, name: "special:minimized" } })), null)
+  assert.equal(clear(floating([100, 400], [800, 600], { workspace: { id: -97, name: "special:qconsole" } })), null)
+})
+
+test("gaps_out reads one value or the four sides", () => {
+  assert.deepEqual(plain(model.gapsOut("10")), { top: 10, bottom: 10 })
+  assert.deepEqual(plain(model.gapsOut("4 5 6 7")), { top: 4, bottom: 6 })
+  assert.deepEqual(plain(model.gapsOut("")), { top: 0, bottom: 0 })
+})
+
 test("cells follow the dock order and drop the first separator without a second zone", () => {
   assert.deepEqual(plain(model.cellList(["firefox"], ["gimp"], ["0xa"])), ["apps", "app:firefox", "separator:others", "app:gimp", "separator:places", "window:0xa", "downloads", "trash"])
   assert.deepEqual(plain(model.cellList(["firefox"], [], [])), ["apps", "app:firefox", "separator:places", "downloads", "trash"])

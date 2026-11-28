@@ -71,12 +71,19 @@ Item {
   readonly property var settings: DockModel.parseSettings(settingsText, {
     dock_autohide: false,
     dock_recents: true,
+    dock_keep_clear: true,
     dock_indicators: true,
     dock_magnification: true,
     dock_size: 58
   })
   readonly property bool autohide: settings.dock_autohide
   readonly property bool showRecents: settings.dock_recents
+  readonly property bool keepClear: settings.dock_keep_clear
+  onKeepClearChanged: root.keepWindowsClear()
+  property bool leftHeld: false
+  property bool rightHeld: false
+  readonly property bool buttonHeld: leftHeld || rightHeld
+  onButtonHeldChanged: if (buttonHeld) clearSettle.stop()
   readonly property bool showIndicators: settings.dock_indicators
   readonly property bool magnify: settings.dock_magnification
   readonly property int preferredSize: Math.max(32, Math.min(80, Math.round(settings.dock_size)))
@@ -402,6 +409,55 @@ Item {
     }
   }
 
+  function keepWindowsClear() {
+    var reserves = docks.instances.some(function(dock) { return dock.exclusiveZone > 0 })
+    if (root.keepClear && reserves && !root.buttonHeld) clearSettle.restart()
+  }
+
+  function moveClear(text) {
+    if (!root.keepClear || root.buttonHeld) return
+    var parts = text.split("\n---\n")
+    var clients, monitors, gaps
+    try {
+      clients = JSON.parse(parts[0])
+      monitors = JSON.parse(parts[1])
+      gaps = DockModel.gapsOut(JSON.parse(parts[2]).css)
+    } catch (error) {
+      return
+    }
+    var zones = {}
+    docks.instances.forEach(function(dock) { zones[dock.screen.name] = dock.exclusiveZone })
+    var steps = []
+    clients.forEach(function(client) {
+      var spot = DockModel.clearOfDock(client, monitors, zones, gaps)
+      if (!spot) return
+      var target = "relative = false, window = \"address:" + client.address + "\" })"
+      if (spot.height !== client.size[1]) steps.push("hl.dsp.window.resize({ x = " + spot.width + ", y = " + spot.height + ", " + target)
+      steps.push("hl.dsp.window.move({ x = " + spot.x + ", y = " + spot.y + ", " + target)
+    })
+    if (steps.length > 0) Util.execDetached(steps.map(function(step) { return "hyprctl dispatch " + Util.shellQuote(step) }).join("; "))
+  }
+
+  Timer {
+    id: clearSettle
+    interval: 150
+    onTriggered: {
+      if (clearScan.running) restart()
+      else clearScan.running = true
+    }
+  }
+
+  Process {
+    id: clearScan
+    command: ["sh", "-c", "hyprctl -j clients; echo ---; hyprctl -j monitors; echo ---; hyprctl -j getoption general:gaps_out"]
+    stdout: StdioCollector {
+      onStreamFinished: root.moveClear(text)
+    }
+  }
+
+  GlobalShortcut { appid: "aresta"; name: "dock-mouse-272"; description: "Dock: left mouse button"; onPressed: root.leftHeld = true; onReleased: { root.leftHeld = false; root.keepWindowsClear() } }
+  GlobalShortcut { appid: "aresta"; name: "dock-mouse-273"; description: "Dock: right mouse button"; onPressed: root.rightHeld = true; onReleased: { root.rightHeld = false; root.keepWindowsClear() } }
+
   Connections {
     target: Hyprland
     function onRawEvent(event) {
@@ -410,6 +466,7 @@ Item {
         Hyprland.refreshWorkspaces()
         Hyprland.refreshToplevels()
       }
+      if (name === "openwindow" || name === "changefloatingmode") root.keepWindowsClear()
     }
   }
 

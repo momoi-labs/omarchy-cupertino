@@ -167,6 +167,30 @@ function restoreWorkspace(item, activeWorkspaceId) {
   return item && item.workspace >= 1 ? item.workspace : activeWorkspaceId
 }
 
+function gapsOut(css) {
+  var parts = String(css || "").trim().split(/\s+/).map(Number).filter(function(value) { return value >= 0 })
+  if (parts.length === 0) return { top: 0, bottom: 0 }
+  return { top: parts[0], bottom: parts.length > 2 ? parts[2] : parts[0] }
+}
+
+function clearOfDock(client, monitors, zones, gaps) {
+  if (!client || !client.floating || client.fullscreen || !client.mapped || client.hidden) return null
+  if (String(client.workspace && client.workspace.name || "").indexOf("special:") === 0) return null
+  var monitor = null
+  for (var i = 0; i < monitors.length; i++) {
+    if (monitors[i].id === client.monitor) monitor = monitors[i]
+  }
+  var zone = monitor ? Number(zones[monitor.name]) || 0 : 0
+  if (zone <= 0) return null
+  var side = monitor.transform % 2 === 1 ? monitor.width : monitor.height
+  var top = monitor.y + monitor.reserved[1] + gaps.top
+  var bottom = monitor.y + Math.round(side / monitor.scale) - Math.max(zone, monitor.reserved[3]) - gaps.bottom
+  var height = client.size[1]
+  if (client.at[1] + height <= bottom) return null
+  if (height <= bottom - top) return { x: client.at[0], y: bottom - height, width: client.size[0], height: height }
+  return { x: client.at[0], y: top, width: client.size[0], height: bottom - top }
+}
+
 function iconScore(path) {
   var own = /\/(hicolor|pixmaps)\//.test(path)
   var match = String(path).match(/\/(\d+)x\d+(?:@(\d+)x?)?\//)

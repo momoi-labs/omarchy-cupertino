@@ -256,6 +256,11 @@ end)
 
 hl.layer_rule({ match = { namespace = "^" .. SWITCHER .. "$" }, no_anim = true, animation = "none" })
 
+for _, button in ipairs({ "272", "273" }) do
+  hl.bind("mouse:" .. button, function() emit("dock-mouse-" .. button) end, { non_consuming = true, ignore_mods = true })
+  hl.bind("mouse:" .. button, function() emit("dock-mouse-" .. button) end, { release = true, non_consuming = true, ignore_mods = true })
+end
+
 if settings.switcher_enabled then
   hl.unbind("SUPER + TAB")
   hl.unbind("SUPER + SHIFT + TAB")
