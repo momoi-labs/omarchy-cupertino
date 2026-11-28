@@ -65,6 +65,7 @@ PanelWindow {
   readonly property int panelHeight: iconSize + 24
   readonly property int panelRadius: Math.min(26, Math.round(panelHeight * 0.32))
   readonly property int edgeGap: 6
+  readonly property size iconPixels: Qt.size(256, 256)
 
   readonly property FontMetrics fontProbe: FontMetrics {}
 
@@ -453,7 +454,7 @@ PanelWindow {
       Image {
         visible: cell.kind !== "apps" && cell.kind !== "window"
         anchors.fill: parent
-        sourceSize: Qt.size(window.iconSize * 2, window.iconSize * 2)
+        sourceSize: window.iconPixels
         source: visible ? cell.iconSource : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: true
@@ -560,7 +561,7 @@ PanelWindow {
           y: parent.height - height - parent.height * 0.02
           width: parent.width * 0.47
           height: width
-          sourceSize: Qt.size(window.iconSize, window.iconSize)
+          sourceSize: window.iconPixels
           source: cell.kind === "window" ? cell.iconSource : ""
           fillMode: Image.PreserveAspectFit
           asynchronous: true
