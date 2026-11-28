@@ -235,8 +235,7 @@ function parseSettings(text, defaults) {
 
 function iconSize(preferred, slots, separators, screenWidth) {
   var available = screenWidth - 124 - separators * 19
-  if (slots * (preferred + 8) <= available) return preferred
-  return Math.max(20, Math.floor(available / slots / 1.14))
+  return Math.max(20, Math.min(preferred, Math.floor(available / slots / 1.14)))
 }
 
 function magnification(distance, size, peak) {

@@ -167,6 +167,18 @@ test("icons shrink when the dock does not fit the screen", () => {
   assert.equal(model.iconSize(58, 400, 2, 1280), 20)
 })
 
+test("a larger size setting never gives smaller icons", () => {
+  for (const slots of [5, 13, 20, 40]) {
+    let last = 0
+    for (let preferred = 32; preferred <= 80; preferred += 2) {
+      const size = model.iconSize(preferred, slots, 1, 1280)
+      assert.ok(size >= last, `${slots} slots: ${preferred} px gives ${size} after ${last}`)
+      assert.ok(size <= preferred)
+      last = size
+    }
+  }
+})
+
 test("magnification peaks under the pointer and fades with distance", () => {
   assert.equal(model.magnification(0, 58, 1.5), 1.5)
   assert.ok(model.magnification(60, 58, 1.5) < 1.5)

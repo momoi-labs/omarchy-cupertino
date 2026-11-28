@@ -79,7 +79,8 @@ Item {
   readonly property bool showRecents: settings.dock_recents
   readonly property bool showIndicators: settings.dock_indicators
   readonly property bool magnify: settings.dock_magnification
-  readonly property int preferredSize: Math.max(32, Math.min(80, Math.round(settings.dock_size)))
+  readonly property int largestSize: 80
+  readonly property int preferredSize: Math.max(32, Math.min(largestSize, Math.round(settings.dock_size)))
 
   readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/aresta"
   property var recents: []

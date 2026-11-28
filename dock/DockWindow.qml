@@ -63,6 +63,7 @@ PanelWindow {
   readonly property int pitch: iconSize + gap
   readonly property int indicatorHeight: 14
   readonly property int panelHeight: iconSize + 24
+  readonly property int largestIcon: dock ? dock.largestSize : 80
   readonly property int panelRadius: Math.min(26, Math.round(panelHeight * 0.32))
   readonly property int edgeGap: 6
   readonly property size iconPixels: Qt.size(256, 256)
@@ -180,7 +181,7 @@ PanelWindow {
     right: true
   }
 
-  implicitHeight: window.edgeGap + window.panelHeight + Math.max(Math.ceil(window.iconSize * 0.9) + 48, Style.spacing.popupRowHeight * 4 + Style.spacing.sm * 2 + 16)
+  implicitHeight: window.edgeGap + window.largestIcon + 24 + Math.max(Math.ceil(window.largestIcon * 0.9) + 48, Style.spacing.popupRowHeight * 4 + Style.spacing.sm * 2 + 16)
 
   mask: Region {
     item: window.contentShown ? zone : null
